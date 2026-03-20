@@ -1,20 +1,23 @@
 import shutil
 import os
 
-source_file = "example.txt"
-copy_file = "copy_example.txt"
+base_path = r"C:\Users\Адильхан\Desktop\pp2\work\Practice6"
+
+source_file = os.path.join(base_path, "example.txt")
+copy_file = os.path.join(base_path, "copy_example.txt")
+backup_file = os.path.join(base_path, "backup_example.txt")
+
 
 shutil.copy(source_file, copy_file)
 print("File copied successfully")
 
-backup_file = "backup_example.txt"
+
 shutil.copy(source_file, backup_file)
 print("Backup created")
 
-file_to_delete = "copy_example.txt"
 
-if os.path.exists(file_to_delete):
-    os.remove(file_to_delete)
+if os.path.exists(copy_file):
+    os.remove(copy_file)
     print("File deleted")
 else:
     print("File not found")
