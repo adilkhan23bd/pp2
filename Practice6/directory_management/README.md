@@ -1,1 +1,0 @@
-This repository contains a collection of Python scripts that demonstrate basic and intermediate concepts of file handling, directory management, and functional programming. The tasks are designed to practice working with files, folders, and built-in Python functions commonly used in real-world applications.
