@@ -1,9 +1,7 @@
 import re
 
-with open(r"C:\Users\Адильхан\Desktop\pp2\work\Practice5/raw.txt", "r", encoding="utf-8") as file:
-    text = file.read()
 
-prices = re.findall(r'\d+\s?\d*,\d{2}', text)
+prices = re.findall(r'Стоимость\n(\d[\d ]*,\d{2})', text)
 
 products = re.findall(r'\d+\.\n([^\n]+)', text)
 
