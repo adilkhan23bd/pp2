@@ -2,22 +2,30 @@ import pygame
 
 class Ball:
     def __init__(self, x, y, radius, screen_width, screen_height):
-        self.x = x
-        self.y = y
+        # Оборачиваем в int, чтобы координаты всегда были целыми
+        self.x = int(x)
+        self.y = int(y)
         self.radius = radius
         self.speed = 20
         self.screen_width = screen_width
         self.screen_height = screen_height
 
     def move(self, dx, dy):
-        new_x = self.x + dx
-        new_y = self.y + dy
+        # Сначала меняем, потом проверяем границы
+        self.x += dx
+        self.y += dy
 
-        if new_x - self.radius >= 0 and new_x + self.radius <= self.screen_width:
-            self.x = new_x
-
-        if new_y - self.radius >= 0 and new_y + self.radius <= self.screen_height:
-            self.y = new_y
+        # Проверка границ (чтобы не улетал за экран)
+        if self.x - self.radius < 0:
+            self.x = self.radius
+        if self.x + self.radius > self.screen_width:
+            self.x = self.screen_width - self.radius
+            
+        if self.y - self.radius < 0:
+            self.y = self.radius
+        if self.y + self.radius > self.screen_height:
+            self.y = self.screen_height - self.radius
 
     def draw(self, screen):
-        pygame.draw.circle(screen, (255, 0, 0), (self.x, self.y), self.radius) 
+        # Рисуем, принудительно преобразуя координаты в int
+        pygame.draw.circle(screen, (255, 0, 0), (int(self.x), int(self.y)), self.radius)
