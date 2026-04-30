@@ -6,6 +6,9 @@ from connect import get_conn
 
 PAGE_SIZE = 5
 
+# Папка, где лежит сам скрипт — все файлы будем сохранять сюда
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # DB initialisation
@@ -13,15 +16,13 @@ PAGE_SIZE = 5
 def init_db():
     conn = get_conn()
     base = os.path.dirname(os.path.abspath(__file__))
-    # Добавляем functions.sql в список
-    for fname in ("shema.sql", "functions.sql", "procedures.sql"): 
+    for fname in ("sсhema.sql", "functions.sql", "procedures.sql"):
         path = os.path.join(base, fname)
         if os.path.exists(path):
             with open(path, "r", encoding="utf-8") as f:
                 sql = f.read().strip()
             if sql:
                 try:
-                    # Выполняем файл целиком, а не по кускам
                     conn.run(sql)
                 except Exception as e:
                     if "already exists" not in str(e).lower():
@@ -30,6 +31,7 @@ def init_db():
             print(f"  [Warning] File {fname} not found!")
     conn.close()
     print("[DB] Schema and Logic ready.\n")
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
@@ -96,7 +98,6 @@ def add_contact():
     rows = conn.run("SELECT id FROM contacts WHERE name=:n ORDER BY id DESC LIMIT 1", n=name)
     contact_id = rows[0][0]
 
-    # Add phones
     while True:
         phone = input("Phone number (leave blank to finish): ").strip()
         if not phone:
@@ -283,9 +284,15 @@ def move_to_group_menu():
 # Import / Export
 # ─────────────────────────────────────────────────────────────────────────────
 def export_json():
-    fname = input("Output filename [contacts.json]: ").strip() or "contacts.json"
-    conn  = get_conn()
-    rows  = conn.run("""
+    default_name = "contacts.json"
+    fname = input(f"Output filename [{default_name}]: ").strip() or default_name
+
+    # Если пользователь не указал полный путь — сохраняем рядом со скриптом
+    if not os.path.isabs(fname):
+        fname = os.path.join(BASE_DIR, fname)
+
+    conn = get_conn()
+    rows = conn.run("""
         SELECT c.id, c.name, c.email, c.birthday::TEXT, g.name AS grp
         FROM contacts c
         LEFT JOIN groups g ON g.id = c.group_id
@@ -304,13 +311,22 @@ def export_json():
             "phones":   [{"phone": p, "type": t} for p, t in phones],
         })
     conn.close()
+
     with open(fname, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
-    print(f"  Exported {len(data)} contacts to '{fname}'.")
+
+    print(f"  Exported {len(data)} contacts to:")
+    print(f"  {fname}")
 
 
 def import_json():
-    fname = input("JSON filename [contacts.json]: ").strip() or "contacts.json"
+    default_name = "contacts.json"
+    fname = input(f"JSON filename [{default_name}]: ").strip() or default_name
+
+    # Если путь относительный — ищем рядом со скриптом
+    if not os.path.isabs(fname):
+        fname = os.path.join(BASE_DIR, fname)
+
     if not os.path.exists(fname):
         print(f"  File '{fname}' not found."); return
 
@@ -321,7 +337,7 @@ def import_json():
     inserted = skipped = overwritten = 0
 
     for item in data:
-        name  = item.get("name", "").strip()
+        name = item.get("name", "").strip()
         if not name:
             continue
         existing = conn.run("SELECT id FROM contacts WHERE name = :n", n=name)
@@ -331,7 +347,6 @@ def import_json():
             if choice != "o":
                 skipped += 1
                 continue
-            # overwrite
             cid = existing[0][0]
             conn.run(
                 "UPDATE contacts SET email=:e, birthday=:b WHERE id=:i",
@@ -363,7 +378,13 @@ def import_json():
 
 
 def import_csv():
-    fname = input("CSV filename [contacts.csv]: ").strip() or "contacts.csv"
+    default_name = "contacts.csv"
+    fname = input(f"CSV filename [{default_name}]: ").strip() or default_name
+
+    # Если путь относительный — ищем рядом со скриптом
+    if not os.path.isabs(fname):
+        fname = os.path.join(BASE_DIR, fname)
+
     if not os.path.exists(fname):
         print(f"  File '{fname}' not found."); return
 
@@ -372,7 +393,6 @@ def import_csv():
 
     with open(fname, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
-        # Group rows by contact name (CSV may have multiple rows per contact for phones)
         contacts_map = {}
         for row in reader:
             name = row.get("name", "").strip()
